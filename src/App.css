@@ -348,12 +348,53 @@ h3 {
 
 .api-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(210px, 260px);
+  gap: 18px;
   align-items: center;
 }
 
+.live-status {
+  display: grid;
+  gap: 5px;
+  min-height: 112px;
+  align-content: center;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #dbe5e8;
+  background: #f9fbfc;
+}
+
+.live-status strong {
+  color: #172126;
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.live-status span:last-child {
+  color: #52646c;
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.live-label {
+  color: #62727a;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.live-status-online {
+  border-color: #a7d7b8;
+  background: #f0fbf4;
+}
+
+.live-status-offline {
+  border-color: #fecaca;
+  background: #fff5f5;
+}
+
 .api-links {
+  grid-column: 1 / -1;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;

@@ -1,7 +1,10 @@
+import { useEffect, useState } from 'react'
 import './App.css'
+import { getApiStatus, type ApiStatusResponse } from './api/releaseSentinelApi'
 import { API_BASE_URL, GITHUB_API_REPO_URL, SWAGGER_URL } from './config'
 
 type SignalStatus = 'ready' | 'risk' | 'blocked'
+type ApiConnectionState = 'loading' | 'online' | 'offline'
 
 type Signal = {
   label: string
@@ -64,7 +67,41 @@ const statusClass = {
   blocked: 'status-blocked',
 } satisfies Record<SignalStatus, string>
 
+const connectionLabel = {
+  loading: 'Checking',
+  online: 'Online',
+  offline: 'Offline',
+} satisfies Record<ApiConnectionState, string>
+
 function App() {
+  const [apiStatus, setApiStatus] = useState<ApiStatusResponse | null>(null)
+  const [connectionState, setConnectionState] = useState<ApiConnectionState>('loading')
+
+  useEffect(() => {
+    let isActive = true
+
+    getApiStatus()
+      .then((status) => {
+        if (!isActive) {
+          return
+        }
+
+        setApiStatus(status)
+        setConnectionState('online')
+      })
+      .catch(() => {
+        if (!isActive) {
+          return
+        }
+
+        setConnectionState('offline')
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [])
+
   return (
     <main className="app-shell">
       <aside className="sidebar" aria-label="Release Sentinel navigation">
@@ -82,7 +119,7 @@ function App() {
           <a href="#readiness">Readiness</a>
           <a href="#workflow">Workflow</a>
           <a href="#testing">Test strategy</a>
-          <a href="#api">API links</a>
+          <a href="#api">API status</a>
         </nav>
 
         <div className="sidebar-panel">
@@ -179,10 +216,15 @@ function App() {
             <p className="eyebrow">Connected service</p>
             <h3>Release Sentinel API</h3>
             <p>
-              The dashboard is designed to sit in front of the deployed Spring Boot API.
-              The next increment will add live API reads after the backend CORS policy is
-              configured for the dashboard domain.
+              The dashboard now reads the deployed Spring Boot status endpoint from the browser.
+              Release quality cards remain representative demo data until the next workflow API
+              integration stage.
             </p>
+          </div>
+          <div className={`live-status live-status-${connectionState}`} aria-live="polite">
+            <span className="live-label">API status</span>
+            <strong>{apiStatus?.status ?? connectionLabel[connectionState]}</strong>
+            <span>{apiStatus?.service ?? API_BASE_URL}</span>
           </div>
           <div className="api-links">
             <a href={`${API_BASE_URL}/api/status`} target="_blank" rel="noreferrer">

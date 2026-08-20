@@ -13,17 +13,18 @@ It gives reviewers a quick product-style view of the backend domain: releases, t
 
 ## Current Scope
 
-Stage 13.1 establishes the React frontend foundation:
+Stage 13.2 adds the first live browser integration:
 
 - React + TypeScript + Vite
 - Tailwind CSS build integration
 - Release readiness dashboard shell
 - Portfolio-friendly API links
 - Render API base URL configuration
-- Production build validation
+- Live `/api/status` read from the deployed Spring Boot backend
+- API connection state for loading, online, and offline cases
 
-The first version uses representative dashboard data while the backend remains the source of truth.
-The next backend/API increment should add CORS configuration for the deployed dashboard domain before live browser reads are enabled.
+The release quality cards still use representative dashboard data.
+The next product increment can add live quality-summary reads and a guided demo workflow.
 
 ## Local Development
 
@@ -71,12 +72,28 @@ Create `.env.local` for local overrides:
 VITE_RELEASE_SENTINEL_API_URL=http://localhost:8080
 ```
 
+## Backend CORS Requirement
+
+The Release Sentinel API must allow the dashboard origin through:
+
+```text
+RELEASE_SENTINEL_CORS_ALLOWED_ORIGINS
+```
+
+Local dashboard origin:
+
+```text
+http://localhost:5173
+```
+
+When the dashboard is deployed to Vercel, add the Vercel URL to the same comma-separated backend environment variable.
+
 ## Planned Stages
 
 | Stage | Focus | Outcome |
 | --- | --- | --- |
 | 13.1 | Frontend foundation | React dashboard shell and project setup |
-| 13.2 | Live API integration | CORS-enabled status and quality summary reads |
+| 13.2 | Live API integration | CORS-enabled status read |
 | 13.3 | Demo workflow | Guided create release/test/defect flow |
 | 13.4 | UI testing | Playwright smoke tests |
 | 13.5 | Vercel deployment | Public dashboard deployment |
