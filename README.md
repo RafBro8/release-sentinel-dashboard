@@ -13,7 +13,7 @@ It gives reviewers a quick product-style view of the backend domain: releases, t
 
 ## Current Scope
 
-Stage 13.5 adds Playwright end-to-end coverage for the dashboard:
+Stage 13.6 adds dashboard CI validation:
 
 - React + TypeScript + Vite
 - Tailwind CSS build integration
@@ -23,6 +23,7 @@ Stage 13.5 adds Playwright end-to-end coverage for the dashboard:
 - Guided demo button that creates release-readiness data through the API
 - Real quality summary rendering from the deployed backend
 - Playwright browser tests with mocked API responses for stable local and CI runs
+- GitHub Actions workflow for lint, build, and Playwright validation
 
 The demo workflow creates a project, environment, release, test case, test run, failed execution, critical defect, and then fetches the quality summary.
 
@@ -70,6 +71,20 @@ Install the local Playwright browser once if needed:
 npx playwright install chromium
 ```
 
+## Continuous Integration
+
+GitHub Actions validates the dashboard on pushes and pull requests to `main`.
+
+The CI workflow runs:
+
+- `npm ci`
+- `npm run lint`
+- `npm run build`
+- `npx playwright install --with-deps chromium`
+- `npm run test:e2e`
+
+If Playwright fails in CI, the workflow uploads the HTML report as an artifact.
+
 ## Environment Configuration
 
 The dashboard reads the backend URL from:
@@ -115,4 +130,5 @@ When the dashboard is deployed to Vercel, add the Vercel URL to the same comma-s
 | 13.3 | Demo workflow | Guided create release/test/defect flow |
 | 13.4 | UI/UX refactor | Multi-view dashboard navigation |
 | 13.5 | UI testing | Playwright smoke tests with mocked API routes |
-| 13.6 | Vercel deployment | Public dashboard deployment |
+| 13.6 | Dashboard CI | GitHub Actions build, lint, and Playwright checks |
+| 13.7 | Vercel deployment | Public dashboard deployment |
