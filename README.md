@@ -13,7 +13,7 @@ It gives reviewers a quick product-style view of the backend domain: releases, t
 
 ## Current Scope
 
-Stage 13.4 refactors the dashboard user experience:
+Stage 13.5 adds Playwright end-to-end coverage for the dashboard:
 
 - React + TypeScript + Vite
 - Tailwind CSS build integration
@@ -22,6 +22,7 @@ Stage 13.4 refactors the dashboard user experience:
 - Live `/api/status` read from the deployed Spring Boot backend
 - Guided demo button that creates release-readiness data through the API
 - Real quality summary rendering from the deployed backend
+- Playwright browser tests with mocked API responses for stable local and CI runs
 
 The demo workflow creates a project, environment, release, test case, test run, failed execution, critical defect, and then fetches the quality summary.
 
@@ -49,6 +50,24 @@ Lint:
 
 ```bash
 npm run lint
+```
+
+Run Playwright tests:
+
+```bash
+npm run test:e2e
+```
+
+Open Playwright UI mode:
+
+```bash
+npm run test:e2e:ui
+```
+
+Install the local Playwright browser once if needed:
+
+```bash
+npx playwright install chromium
 ```
 
 ## Environment Configuration
@@ -95,5 +114,5 @@ When the dashboard is deployed to Vercel, add the Vercel URL to the same comma-s
 | 13.2 | Live API integration | CORS-enabled status read |
 | 13.3 | Demo workflow | Guided create release/test/defect flow |
 | 13.4 | UI/UX refactor | Multi-view dashboard navigation |
-| 13.5 | UI testing | Playwright smoke tests |
+| 13.5 | UI testing | Playwright smoke tests with mocked API routes |
 | 13.6 | Vercel deployment | Public dashboard deployment |
