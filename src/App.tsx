@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-import { getApiStatus, type ApiStatusResponse } from './api/releaseSentinelApi'
+import {
+  getApiStatus,
+  runBlockedReleaseDemo,
+  type ApiStatusResponse,
+  type DemoWorkflowResult,
+} from './api/releaseSentinelApi'
 import { API_BASE_URL, GITHUB_API_REPO_URL, SWAGGER_URL } from './config'
 
 type SignalStatus = 'ready' | 'risk' | 'blocked'
 type ApiConnectionState = 'loading' | 'online' | 'offline'
+type DemoState = 'idle' | 'running' | 'complete' | 'error'
 
 type Signal = {
   label: string
@@ -18,7 +24,7 @@ type WorkflowStep = {
   value: string
 }
 
-const signals: Signal[] = [
+const defaultSignals: Signal[] = [
   {
     label: 'Quality gate',
     value: 'BLOCKED',
@@ -45,7 +51,7 @@ const signals: Signal[] = [
   },
 ]
 
-const workflow: WorkflowStep[] = [
+const defaultWorkflow: WorkflowStep[] = [
   { label: 'Project', value: 'Payments Platform' },
   { label: 'Release', value: '2026.08.19-rc.1' },
   { label: 'Test run', value: 'Regression API Suite' },
@@ -59,6 +65,17 @@ const testLayers = [
   'PostgreSQL Testcontainers',
   'Postman/Newman workflow',
   'GitHub Actions CI',
+]
+
+const demoSteps = [
+  'Create project',
+  'Create environment',
+  'Create release',
+  'Create test case',
+  'Create test run',
+  'Record failed execution',
+  'Create critical defect',
+  'Fetch quality summary',
 ]
 
 const statusClass = {
@@ -76,6 +93,9 @@ const connectionLabel = {
 function App() {
   const [apiStatus, setApiStatus] = useState<ApiStatusResponse | null>(null)
   const [connectionState, setConnectionState] = useState<ApiConnectionState>('loading')
+  const [demoState, setDemoState] = useState<DemoState>('idle')
+  const [demoResult, setDemoResult] = useState<DemoWorkflowResult | null>(null)
+  const [demoError, setDemoError] = useState<string | null>(null)
 
   useEffect(() => {
     let isActive = true
@@ -102,6 +122,32 @@ function App() {
     }
   }, [])
 
+  const qualitySummary = demoResult?.summary
+  const signals = qualitySummary ? getSignalsFromSummary(qualitySummary) : defaultSignals
+  const workflow = qualitySummary
+    ? [
+        { label: 'Project', value: shortId(demoResult.projectId) },
+        { label: 'Release', value: qualitySummary.releaseVersion },
+        { label: 'Test run', value: shortId(demoResult.testRunId) },
+        { label: 'Recommendation', value: qualitySummary.recommendation },
+      ]
+    : defaultWorkflow
+
+  async function handleRunDemo() {
+    setDemoState('running')
+    setDemoResult(null)
+    setDemoError(null)
+
+    try {
+      const result = await runBlockedReleaseDemo()
+      setDemoResult(result)
+      setDemoState('complete')
+    } catch (error) {
+      setDemoError(error instanceof Error ? error.message : 'Demo workflow failed')
+      setDemoState('error')
+    }
+  }
+
   return (
     <main className="app-shell">
       <aside className="sidebar" aria-label="Release Sentinel navigation">
@@ -117,8 +163,8 @@ function App() {
 
         <nav className="nav-list" aria-label="Dashboard sections">
           <a href="#readiness">Readiness</a>
+          <a href="#demo">Run demo</a>
           <a href="#workflow">Workflow</a>
-          <a href="#testing">Test strategy</a>
           <a href="#api">API status</a>
         </nav>
 
@@ -149,17 +195,19 @@ function App() {
         <section className="hero-panel" id="readiness">
           <div>
             <p className="eyebrow">Current release</p>
-            <h3>Checkout API release is blocked by a critical defect.</h3>
+            <h3>{qualitySummary ? getHeroTitle(qualitySummary.status) : 'Checkout API release is blocked by a critical defect.'}</h3>
             <p className="hero-copy">
-              This dashboard summarizes the same release quality signals exposed by the
-              Spring Boot API: test execution health, defect severity, and quality gate
-              recommendation.
+              {qualitySummary
+                ? qualitySummary.recommendation
+                : 'This dashboard summarizes the same release quality signals exposed by the Spring Boot API: test execution health, defect severity, and quality gate recommendation.'}
             </p>
           </div>
-          <div className="readiness-card" aria-label="Release readiness score">
+          <div className={`readiness-card readiness-${qualitySummary?.status.toLowerCase() ?? 'blocked'}`} aria-label="Release readiness score">
             <span className="score-label">Readiness</span>
-            <strong>BLOCKED</strong>
-            <span className="score-detail">Critical release risk detected</span>
+            <strong>{qualitySummary?.status ?? 'BLOCKED'}</strong>
+            <span className="score-detail">
+              {qualitySummary ? `${qualitySummary.failed} failed test, ${qualitySummary.openCriticalDefects} critical defect` : 'Critical release risk detected'}
+            </span>
           </div>
         </section>
 
@@ -176,11 +224,45 @@ function App() {
           ))}
         </section>
 
+        <section className="demo-panel" id="demo">
+          <div>
+            <p className="eyebrow">Live workflow</p>
+            <h3>Generate a blocked release scenario</h3>
+            <p>
+              This button calls the deployed API, writes a project, environment, release,
+              test case, failed execution, critical defect, and then reads the real quality
+              summary from PostgreSQL.
+            </p>
+          </div>
+          <button className="button button-primary demo-button" type="button" onClick={handleRunDemo} disabled={demoState === 'running'}>
+            {demoState === 'running' ? 'Running workflow...' : 'Run demo scenario'}
+          </button>
+          <ol className="demo-steps" aria-label="Demo workflow steps">
+            {demoSteps.map((step, index) => (
+              <li key={step} className={getDemoStepClass(demoState, index)}>
+                <span>{index + 1}</span>
+                {step}
+              </li>
+            ))}
+          </ol>
+          {demoState === 'complete' && demoResult ? (
+            <div className="demo-result" role="status">
+              <strong>Quality summary returned {demoResult.summary.status}</strong>
+              <span>Release {demoResult.summary.releaseVersion} now has {demoResult.summary.riskReasons.length} risk reason(s).</span>
+            </div>
+          ) : null}
+          {demoState === 'error' && demoError ? (
+            <div className="demo-error" role="alert">
+              {demoError}
+            </div>
+          ) : null}
+        </section>
+
         <section className="content-grid">
           <article className="panel" id="workflow">
             <div className="section-heading">
               <p className="eyebrow">Workflow</p>
-              <h3>API-backed release review</h3>
+              <h3>{qualitySummary ? 'Latest API-created release' : 'API-backed release review'}</h3>
             </div>
             <div className="timeline">
               {workflow.map((step, index) => (
@@ -216,9 +298,8 @@ function App() {
             <p className="eyebrow">Connected service</p>
             <h3>Release Sentinel API</h3>
             <p>
-              The dashboard now reads the deployed Spring Boot status endpoint from the browser.
-              Release quality cards remain representative demo data until the next workflow API
-              integration stage.
+              The dashboard reads the deployed Spring Boot status endpoint and can run a
+              full release-readiness workflow through the live API.
             </p>
           </div>
           <div className={`live-status live-status-${connectionState}`} aria-live="polite">
@@ -241,6 +322,79 @@ function App() {
       </section>
     </main>
   )
+}
+
+function getSignalsFromSummary(summary: DemoWorkflowResult['summary']): Signal[] {
+  return [
+    {
+      label: 'Quality gate',
+      value: summary.status,
+      status: getSignalStatus(summary.status),
+      detail: summary.recommendation,
+    },
+    {
+      label: 'Automated tests',
+      value: `${summary.passRate.toFixed(0)}% pass`,
+      status: summary.failed > 0 ? 'risk' : 'ready',
+      detail: `${summary.passed} passed, ${summary.failed} failed, ${summary.totalTests} total.`,
+    },
+    {
+      label: 'Defects',
+      value: `${summary.openCriticalDefects} critical`,
+      status: summary.openCriticalDefects > 0 ? 'blocked' : 'ready',
+      detail: `${summary.openDefects} open defect(s), ${summary.blockingDefects} blocking release.`,
+    },
+    {
+      label: 'Risk reasons',
+      value: summary.riskReasons.length.toString(),
+      status: summary.riskReasons.length > 0 ? 'blocked' : 'ready',
+      detail: summary.riskReasons[0] ?? 'No release risks detected.',
+    },
+  ]
+}
+
+function getSignalStatus(status: DemoWorkflowResult['summary']['status']): SignalStatus {
+  if (status === 'READY') {
+    return 'ready'
+  }
+
+  if (status === 'AT_RISK') {
+    return 'risk'
+  }
+
+  return 'blocked'
+}
+
+function getHeroTitle(status: DemoWorkflowResult['summary']['status']) {
+  if (status === 'READY') {
+    return 'The generated release is ready to ship.'
+  }
+
+  if (status === 'AT_RISK') {
+    return 'The generated release needs review before shipping.'
+  }
+
+  return 'The generated release is blocked by live API quality signals.'
+}
+
+function getDemoStepClass(state: DemoState, index: number) {
+  if (state === 'complete') {
+    return 'demo-step-complete'
+  }
+
+  if (state === 'running') {
+    return index < demoSteps.length - 1 ? 'demo-step-active' : 'demo-step-pending'
+  }
+
+  if (state === 'error') {
+    return 'demo-step-error'
+  }
+
+  return 'demo-step-pending'
+}
+
+function shortId(id: string) {
+  return id.slice(0, 8)
 }
 
 export default App

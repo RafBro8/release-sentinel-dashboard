@@ -13,7 +13,7 @@ It gives reviewers a quick product-style view of the backend domain: releases, t
 
 ## Current Scope
 
-Stage 13.2 adds the first live browser integration:
+Stage 13.3 adds a guided live demo workflow:
 
 - React + TypeScript + Vite
 - Tailwind CSS build integration
@@ -21,10 +21,10 @@ Stage 13.2 adds the first live browser integration:
 - Portfolio-friendly API links
 - Render API base URL configuration
 - Live `/api/status` read from the deployed Spring Boot backend
-- API connection state for loading, online, and offline cases
+- Guided demo button that creates release-readiness data through the API
+- Real quality summary rendering from the deployed backend
 
-The release quality cards still use representative dashboard data.
-The next product increment can add live quality-summary reads and a guided demo workflow.
+The demo workflow creates a project, environment, release, test case, test run, failed execution, critical defect, and then fetches the quality summary.
 
 ## Local Development
 
