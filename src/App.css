@@ -80,20 +80,24 @@ h3 {
   gap: 6px;
 }
 
-.nav-list a,
-.sidebar-panel a {
-  color: #d9e7eb;
-  text-decoration: none;
-}
-
-.nav-list a {
-  padding: 10px 12px;
+.nav-button {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
   border-radius: 7px;
+  padding: 0 12px;
+  background: transparent;
+  color: #d9e7eb;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.nav-list a:hover,
-.nav-list a:focus-visible {
-  background: rgba(255, 255, 255, 0.08);
+.nav-button:hover,
+.nav-button:focus-visible,
+.nav-button[aria-current='page'] {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
   outline: none;
 }
 
@@ -107,6 +111,11 @@ h3 {
   background: rgba(255, 255, 255, 0.06);
 }
 
+.sidebar-panel a {
+  color: #d9e7eb;
+  text-decoration: none;
+}
+
 .panel-label {
   color: #9fb2ba;
   font-size: 0.78rem;
@@ -115,15 +124,13 @@ h3 {
 .dashboard {
   min-width: 0;
   display: grid;
+  align-content: start;
   gap: 22px;
   padding: 28px;
 }
 
 .topbar,
-.hero-panel,
-.content-grid,
-.api-panel,
-.demo-panel {
+.view-frame {
   width: min(1160px, 100%);
   margin: 0 auto;
 }
@@ -140,6 +147,15 @@ h3 {
   gap: 10px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.view-frame {
+  min-height: calc(100vh - 150px);
+}
+
+.view-stack {
+  display: grid;
+  gap: 18px;
 }
 
 .button,
@@ -230,8 +246,6 @@ h3 {
 }
 
 .signal-grid {
-  width: min(1160px, 100%);
-  margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
@@ -250,6 +264,7 @@ h3 {
 .signal-card {
   display: grid;
   gap: 10px;
+  min-height: 154px;
   padding: 18px;
 }
 
@@ -532,6 +547,10 @@ h3 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
+  .nav-button {
+    text-align: center;
+  }
+
   .hero-panel,
   .content-grid,
   .api-panel,
@@ -547,6 +566,10 @@ h3 {
   .api-links,
   .topbar-actions {
     justify-content: flex-start;
+  }
+
+  .view-frame {
+    min-height: auto;
   }
 }
 

@@ -11,6 +11,7 @@ import { API_BASE_URL, GITHUB_API_REPO_URL, SWAGGER_URL } from './config'
 type SignalStatus = 'ready' | 'risk' | 'blocked'
 type ApiConnectionState = 'loading' | 'online' | 'offline'
 type DemoState = 'idle' | 'running' | 'complete' | 'error'
+type ViewKey = 'readiness' | 'demo' | 'workflow' | 'api'
 
 type Signal = {
   label: string
@@ -23,6 +24,40 @@ type WorkflowStep = {
   label: string
   value: string
 }
+
+type View = {
+  key: ViewKey
+  label: string
+  kicker: string
+  title: string
+}
+
+const views: View[] = [
+  {
+    key: 'readiness',
+    label: 'Readiness',
+    kicker: 'Portfolio demo',
+    title: 'Release readiness command center',
+  },
+  {
+    key: 'demo',
+    label: 'Run demo',
+    kicker: 'Live workflow',
+    title: 'Generate release quality data',
+  },
+  {
+    key: 'workflow',
+    label: 'Workflow',
+    kicker: 'Release review',
+    title: 'API-backed release timeline',
+  },
+  {
+    key: 'api',
+    label: 'API status',
+    kicker: 'Connected service',
+    title: 'Release Sentinel API health',
+  },
+]
 
 const defaultSignals: Signal[] = [
   {
@@ -91,6 +126,7 @@ const connectionLabel = {
 } satisfies Record<ApiConnectionState, string>
 
 function App() {
+  const [activeView, setActiveView] = useState<ViewKey>('readiness')
   const [apiStatus, setApiStatus] = useState<ApiStatusResponse | null>(null)
   const [connectionState, setConnectionState] = useState<ApiConnectionState>('loading')
   const [demoState, setDemoState] = useState<DemoState>('idle')
@@ -132,6 +168,7 @@ function App() {
         { label: 'Recommendation', value: qualitySummary.recommendation },
       ]
     : defaultWorkflow
+  const currentView = views.find((view) => view.key === activeView) ?? views[0]
 
   async function handleRunDemo() {
     setDemoState('running')
@@ -161,11 +198,18 @@ function App() {
           </div>
         </div>
 
-        <nav className="nav-list" aria-label="Dashboard sections">
-          <a href="#readiness">Readiness</a>
-          <a href="#demo">Run demo</a>
-          <a href="#workflow">Workflow</a>
-          <a href="#api">API status</a>
+        <nav className="nav-list" aria-label="Dashboard views">
+          {views.map((view) => (
+            <button
+              aria-current={activeView === view.key ? 'page' : undefined}
+              className="nav-button"
+              key={view.key}
+              onClick={() => setActiveView(view.key)}
+              type="button"
+            >
+              {view.label}
+            </button>
+          ))}
         </nav>
 
         <div className="sidebar-panel">
@@ -179,8 +223,8 @@ function App() {
       <section className="dashboard">
         <header className="topbar">
           <div>
-            <p className="eyebrow">Portfolio demo</p>
-            <h2>Release readiness command center</h2>
+            <p className="eyebrow">{currentView.kicker}</p>
+            <h2>{currentView.title}</h2>
           </div>
           <div className="topbar-actions">
             <a className="button button-secondary" href={GITHUB_API_REPO_URL} target="_blank" rel="noreferrer">
@@ -192,135 +236,207 @@ function App() {
           </div>
         </header>
 
-        <section className="hero-panel" id="readiness">
-          <div>
-            <p className="eyebrow">Current release</p>
-            <h3>{qualitySummary ? getHeroTitle(qualitySummary.status) : 'Checkout API release is blocked by a critical defect.'}</h3>
-            <p className="hero-copy">
-              {qualitySummary
-                ? qualitySummary.recommendation
-                : 'This dashboard summarizes the same release quality signals exposed by the Spring Boot API: test execution health, defect severity, and quality gate recommendation.'}
-            </p>
-          </div>
-          <div className={`readiness-card readiness-${qualitySummary?.status.toLowerCase() ?? 'blocked'}`} aria-label="Release readiness score">
-            <span className="score-label">Readiness</span>
-            <strong>{qualitySummary?.status ?? 'BLOCKED'}</strong>
-            <span className="score-detail">
-              {qualitySummary ? `${qualitySummary.failed} failed test, ${qualitySummary.openCriticalDefects} critical defect` : 'Critical release risk detected'}
-            </span>
-          </div>
-        </section>
-
-        <section className="signal-grid" aria-label="Quality signals">
-          {signals.map((signal) => (
-            <article className="signal-card" key={signal.label}>
-              <div className="signal-header">
-                <span>{signal.label}</span>
-                <span className={`status-dot ${statusClass[signal.status]}`} aria-hidden="true" />
-              </div>
-              <strong>{signal.value}</strong>
-              <p>{signal.detail}</p>
-            </article>
-          ))}
-        </section>
-
-        <section className="demo-panel" id="demo">
-          <div>
-            <p className="eyebrow">Live workflow</p>
-            <h3>Generate a blocked release scenario</h3>
-            <p>
-              This button calls the deployed API, writes a project, environment, release,
-              test case, failed execution, critical defect, and then reads the real quality
-              summary from PostgreSQL.
-            </p>
-          </div>
-          <button className="button button-primary demo-button" type="button" onClick={handleRunDemo} disabled={demoState === 'running'}>
-            {demoState === 'running' ? 'Running workflow...' : 'Run demo scenario'}
-          </button>
-          <ol className="demo-steps" aria-label="Demo workflow steps">
-            {demoSteps.map((step, index) => (
-              <li key={step} className={getDemoStepClass(demoState, index)}>
-                <span>{index + 1}</span>
-                {step}
-              </li>
-            ))}
-          </ol>
-          {demoState === 'complete' && demoResult ? (
-            <div className="demo-result" role="status">
-              <strong>Quality summary returned {demoResult.summary.status}</strong>
-              <span>Release {demoResult.summary.releaseVersion} now has {demoResult.summary.riskReasons.length} risk reason(s).</span>
-            </div>
+        <section className="view-frame" aria-live="polite">
+          {activeView === 'readiness' ? (
+            <ReadinessView qualitySummary={qualitySummary} signals={signals} />
           ) : null}
-          {demoState === 'error' && demoError ? (
-            <div className="demo-error" role="alert">
-              {demoError}
-            </div>
+
+          {activeView === 'demo' ? (
+            <DemoView
+              demoError={demoError}
+              demoResult={demoResult}
+              demoState={demoState}
+              onRunDemo={handleRunDemo}
+            />
           ) : null}
-        </section>
 
-        <section className="content-grid">
-          <article className="panel" id="workflow">
-            <div className="section-heading">
-              <p className="eyebrow">Workflow</p>
-              <h3>{qualitySummary ? 'Latest API-created release' : 'API-backed release review'}</h3>
-            </div>
-            <div className="timeline">
-              {workflow.map((step, index) => (
-                <div className="timeline-row" key={step.label}>
-                  <span className="timeline-index">{index + 1}</span>
-                  <div>
-                    <span>{step.label}</span>
-                    <strong>{step.value}</strong>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </article>
+          {activeView === 'workflow' ? (
+            <WorkflowView qualitySummary={qualitySummary} workflow={workflow} />
+          ) : null}
 
-          <article className="panel" id="testing">
-            <div className="section-heading">
-              <p className="eyebrow">SDET focus</p>
-              <h3>Validation layers</h3>
-            </div>
-            <ul className="test-list">
-              {testLayers.map((layer) => (
-                <li key={layer}>
-                  <span aria-hidden="true" />
-                  {layer}
-                </li>
-              ))}
-            </ul>
-          </article>
-        </section>
-
-        <section className="api-panel" id="api">
-          <div>
-            <p className="eyebrow">Connected service</p>
-            <h3>Release Sentinel API</h3>
-            <p>
-              The dashboard reads the deployed Spring Boot status endpoint and can run a
-              full release-readiness workflow through the live API.
-            </p>
-          </div>
-          <div className={`live-status live-status-${connectionState}`} aria-live="polite">
-            <span className="live-label">API status</span>
-            <strong>{apiStatus?.status ?? connectionLabel[connectionState]}</strong>
-            <span>{apiStatus?.service ?? API_BASE_URL}</span>
-          </div>
-          <div className="api-links">
-            <a href={`${API_BASE_URL}/api/status`} target="_blank" rel="noreferrer">
-              Status endpoint
-            </a>
-            <a href={`${API_BASE_URL}/actuator/health`} target="_blank" rel="noreferrer">
-              Health endpoint
-            </a>
-            <a href={SWAGGER_URL} target="_blank" rel="noreferrer">
-              Swagger docs
-            </a>
-          </div>
+          {activeView === 'api' ? (
+            <ApiView
+              apiStatus={apiStatus}
+              connectionState={connectionState}
+            />
+          ) : null}
         </section>
       </section>
     </main>
+  )
+}
+
+function ReadinessView({
+  qualitySummary,
+  signals,
+}: {
+  qualitySummary: DemoWorkflowResult['summary'] | undefined
+  signals: Signal[]
+}) {
+  return (
+    <div className="view-stack">
+      <section className="hero-panel">
+        <div>
+          <p className="eyebrow">Current release</p>
+          <h3>{qualitySummary ? getHeroTitle(qualitySummary.status) : 'Checkout API release is blocked by a critical defect.'}</h3>
+          <p className="hero-copy">
+            {qualitySummary
+              ? qualitySummary.recommendation
+              : 'This view summarizes the same release quality signals exposed by the Spring Boot API: test execution health, defect severity, and quality gate recommendation.'}
+          </p>
+        </div>
+        <div className={`readiness-card readiness-${qualitySummary?.status.toLowerCase() ?? 'blocked'}`} aria-label="Release readiness score">
+          <span className="score-label">Readiness</span>
+          <strong>{qualitySummary?.status ?? 'BLOCKED'}</strong>
+          <span className="score-detail">
+            {qualitySummary ? `${qualitySummary.failed} failed test, ${qualitySummary.openCriticalDefects} critical defect` : 'Critical release risk detected'}
+          </span>
+        </div>
+      </section>
+
+      <section className="signal-grid" aria-label="Quality signals">
+        {signals.map((signal) => (
+          <article className="signal-card" key={signal.label}>
+            <div className="signal-header">
+              <span>{signal.label}</span>
+              <span className={`status-dot ${statusClass[signal.status]}`} aria-hidden="true" />
+            </div>
+            <strong>{signal.value}</strong>
+            <p>{signal.detail}</p>
+          </article>
+        ))}
+      </section>
+    </div>
+  )
+}
+
+function DemoView({
+  demoError,
+  demoResult,
+  demoState,
+  onRunDemo,
+}: {
+  demoError: string | null
+  demoResult: DemoWorkflowResult | null
+  demoState: DemoState
+  onRunDemo: () => void
+}) {
+  return (
+    <section className="demo-panel">
+      <div>
+        <p className="eyebrow">Live workflow</p>
+        <h3>Generate a blocked release scenario</h3>
+        <p>
+          This action calls the deployed API, writes a project, environment, release,
+          test case, failed execution, critical defect, and then reads the real quality
+          summary from PostgreSQL.
+        </p>
+      </div>
+      <button className="button button-primary demo-button" type="button" onClick={onRunDemo} disabled={demoState === 'running'}>
+        {demoState === 'running' ? 'Running workflow...' : 'Run demo scenario'}
+      </button>
+      <ol className="demo-steps" aria-label="Demo workflow steps">
+        {demoSteps.map((step, index) => (
+          <li key={step} className={getDemoStepClass(demoState, index)}>
+            <span>{index + 1}</span>
+            {step}
+          </li>
+        ))}
+      </ol>
+      {demoState === 'complete' && demoResult ? (
+        <div className="demo-result" role="status">
+          <strong>Quality summary returned {demoResult.summary.status}</strong>
+          <span>Release {demoResult.summary.releaseVersion} now has {demoResult.summary.riskReasons.length} risk reason(s).</span>
+        </div>
+      ) : null}
+      {demoState === 'error' && demoError ? (
+        <div className="demo-error" role="alert">
+          {demoError}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+function WorkflowView({
+  qualitySummary,
+  workflow,
+}: {
+  qualitySummary: DemoWorkflowResult['summary'] | undefined
+  workflow: WorkflowStep[]
+}) {
+  return (
+    <section className="content-grid">
+      <article className="panel">
+        <div className="section-heading">
+          <p className="eyebrow">Workflow</p>
+          <h3>{qualitySummary ? 'Latest API-created release' : 'API-backed release review'}</h3>
+        </div>
+        <div className="timeline">
+          {workflow.map((step, index) => (
+            <div className="timeline-row" key={step.label}>
+              <span className="timeline-index">{index + 1}</span>
+              <div>
+                <span>{step.label}</span>
+                <strong>{step.value}</strong>
+              </div>
+            </div>
+          ))}
+        </div>
+      </article>
+
+      <article className="panel">
+        <div className="section-heading">
+          <p className="eyebrow">SDET focus</p>
+          <h3>Validation layers</h3>
+        </div>
+        <ul className="test-list">
+          {testLayers.map((layer) => (
+            <li key={layer}>
+              <span aria-hidden="true" />
+              {layer}
+            </li>
+          ))}
+        </ul>
+      </article>
+    </section>
+  )
+}
+
+function ApiView({
+  apiStatus,
+  connectionState,
+}: {
+  apiStatus: ApiStatusResponse | null
+  connectionState: ApiConnectionState
+}) {
+  return (
+    <section className="api-panel">
+      <div>
+        <p className="eyebrow">Connected service</p>
+        <h3>Release Sentinel API</h3>
+        <p>
+          The dashboard reads the deployed Spring Boot status endpoint and can run a
+          full release-readiness workflow through the live API.
+        </p>
+      </div>
+      <div className={`live-status live-status-${connectionState}`} aria-live="polite">
+        <span className="live-label">API status</span>
+        <strong>{apiStatus?.status ?? connectionLabel[connectionState]}</strong>
+        <span>{apiStatus?.service ?? API_BASE_URL}</span>
+      </div>
+      <div className="api-links">
+        <a href={`${API_BASE_URL}/api/status`} target="_blank" rel="noreferrer">
+          Status endpoint
+        </a>
+        <a href={`${API_BASE_URL}/actuator/health`} target="_blank" rel="noreferrer">
+          Health endpoint
+        </a>
+        <a href={SWAGGER_URL} target="_blank" rel="noreferrer">
+          Swagger docs
+        </a>
+      </div>
+    </section>
   )
 }
 

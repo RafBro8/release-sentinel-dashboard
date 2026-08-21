@@ -13,13 +13,12 @@ It gives reviewers a quick product-style view of the backend domain: releases, t
 
 ## Current Scope
 
-Stage 13.3 adds a guided live demo workflow:
+Stage 13.4 refactors the dashboard user experience:
 
 - React + TypeScript + Vite
 - Tailwind CSS build integration
-- Release readiness dashboard shell
-- Portfolio-friendly API links
-- Render API base URL configuration
+- Multi-view dashboard navigation instead of anchor scrolling
+- Dedicated views for readiness, demo workflow, API-backed workflow, and API status
 - Live `/api/status` read from the deployed Spring Boot backend
 - Guided demo button that creates release-readiness data through the API
 - Real quality summary rendering from the deployed backend
@@ -95,5 +94,6 @@ When the dashboard is deployed to Vercel, add the Vercel URL to the same comma-s
 | 13.1 | Frontend foundation | React dashboard shell and project setup |
 | 13.2 | Live API integration | CORS-enabled status read |
 | 13.3 | Demo workflow | Guided create release/test/defect flow |
-| 13.4 | UI testing | Playwright smoke tests |
-| 13.5 | Vercel deployment | Public dashboard deployment |
+| 13.4 | UI/UX refactor | Multi-view dashboard navigation |
+| 13.5 | UI testing | Playwright smoke tests |
+| 13.6 | Vercel deployment | Public dashboard deployment |
