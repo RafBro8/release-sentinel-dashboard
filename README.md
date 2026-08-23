@@ -132,3 +132,20 @@ When the dashboard is deployed to Vercel, add the Vercel URL to the same comma-s
 | 13.5 | UI testing | Playwright smoke tests with mocked API routes |
 | 13.6 | Dashboard CI | GitHub Actions build, lint, and Playwright checks |
 | 13.7 | Vercel deployment | Public dashboard deployment |
+
+## Live Portfolio Demo
+
+Live dashboard: https://release-sentinel-dashboard.vercel.app
+
+Backend API: https://release-sentinel-api.onrender.com
+
+API repository: https://github.com/RafBro8/release-sentinel-api
+
+## Portfolio Review Flow
+
+1. Open the live dashboard.
+2. Check the API status view.
+3. Run the guided demo scenario.
+4. Review the updated readiness and workflow views.
+5. Open Swagger to inspect the backend API contract.
+6. Review the validation layers: JUnit, Rest Assured, Testcontainers, Postman/Newman, Playwright, and GitHub Actions.
