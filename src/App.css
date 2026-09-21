@@ -593,3 +593,30 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
+
+.site-footer {
+  width: min(1160px, 100%);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 18px;
+  border-top: 1px solid rgba(23, 33, 38, 0.12);
+  color: rgba(23, 33, 38, 0.55);
+  font-size: 13px;
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+.site-footer a {
+  color: rgba(23, 33, 38, 0.8);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  text-decoration: underline;
+}

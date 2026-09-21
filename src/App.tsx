@@ -261,6 +261,20 @@ function App() {
             />
           ) : null}
         </section>
+
+        {/* A dashboard rather than an invented company, so the warning is
+            milder than on the brand demos — but it still runs on generated
+            data, and somebody looking at release decisions should know that
+            before reading a status as real. */}
+        <footer className="site-footer">
+          <p>Demo dashboard. The releases and quality signals here are generated.</p>
+          <p>
+            Designed &amp; Built by{' '}
+            <a href="https://goodlookingdigital.com" target="_blank" rel="noreferrer">
+              Good Looking Digital
+            </a>
+          </p>
+        </footer>
       </section>
     </main>
   )
