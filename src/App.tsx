@@ -263,7 +263,7 @@ function App() {
         </section>
 
         {/* A dashboard rather than an invented company, so the warning is
-            milder than on the brand demos — but it still runs on generated
+            milder than on the brand demos - but it still runs on generated
             data, and somebody looking at release decisions should know that
             before reading a status as real. */}
         <footer className="site-footer">
